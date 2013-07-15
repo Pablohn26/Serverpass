@@ -1,12 +1,13 @@
 #!/usr/bin/python
-import getpass,os,subprocess
+import getpass,os,subprocess,argparse,glob
 
 
 ####CONFIG
 passpath="./"
+deletepath="/tmp/"
 enc_protocol="aes256"
 format=".cy"
-deletepath="/tmp/"
+
 
 ####FUNCTIONS
 
@@ -17,17 +18,6 @@ def sget(stringtoprint):
     except KeyboardInterrupt:
         print "\nKeyboard Interruption"
         exit
-
-def ask_option():
-    print "1.Add pass"
-    print "2.Get pass"
-    option=sget("Option (type only the number):")
-    if option==str(1):
-        add_pass()
-    elif option==str(2):
-        get_pass()
-    else:
-        print "wrong option :("
 
 def get_user():
     return sget("Insert user:\n")
@@ -47,7 +37,7 @@ def checkfile(path):
 def add_pass():
     name=get_user()
     name=invert(name)
-    if checkfile(passpath+str(name)):
+    if checkfile(passpath+str(name)+str(format)):
         print str(name)+" password file already exists"
     else:
          password=get_password()
@@ -57,6 +47,7 @@ def add_pass():
          print "Enter MASTER PASSWORD"
          os.system("openssl enc -"+str(enc_protocol)+" -in "+str(passpath)+str(name)+" -out "+str(passpath)+str(name)+str(format))
          os.system("shred "+str(passpath)+str(name)+" -u")
+         print invert(name)+" was successfully added"
 
 def get_pass():
     name=get_user()
@@ -70,14 +61,46 @@ def get_pass():
     else:
         print "Username not found!"
         exit
-    
+def delete_pass():
+    print "Stored Passwords"
+    list_pass()
+    to_delete=sget("Select a password to delete\n")
+    to_delete2=passpath+invert(to_delete)+format
+    os.remove(to_delete2)
+    print to_delete+" was successfully removed"
+
+def list_pass():
+    constraint=passpath+str("*")+format
+    for i in glob.glob(constraint):
+        stored_pass = i.replace(passpath, "")
+        stored_pass2 = invert(stored_pass.replace(format, ""))
+        print stored_pass2
+        
+        
 
 ####MAIN
-ask_option()
+parser = argparse.ArgumentParser()
+parser.add_argument("-a","--add", help="Add password",action="store_true")
+parser.add_argument("-d","--delete", help="Delete password",action="store_true")
+parser.add_argument("-g","--get", help="Get your stored password",action="store_true")
+parser.add_argument("-l","--list", help="List your stored passwords",action="store_true")
+args = parser.parse_args()
+if args.get:
+    get_pass()
+elif args.add:
+    add_pass()
+elif args.list:
+    list_pass()
+elif args.delete:
+    delete_pass()
+else:
+    parser.print_help()
+    
+##ask_option()
 
 ##COPYRIGHT 2013 Pablo Hinojosa 
 #site:pablohinojosa.is
-#Version:05/07/2013
+#Version: 1.1 (11/07/2013)
 ##LICENSE
 #This program is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
